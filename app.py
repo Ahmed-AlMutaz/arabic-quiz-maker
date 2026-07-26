@@ -1,9 +1,6 @@
 import os
 import gradio as gr
 from app.main import app as fastapi_app
-import uvicorn
-from app.main import app
-port = int(os.environ.get("PORT", 7860))
 
 custom_css = """
 body { direction: rtl; text-align: right; }
@@ -17,9 +14,5 @@ with gr.Blocks(title="Enterprise Arabic Exam SaaS", css=custom_css) as demo:
         '''
     )
 
-# Mount FastAPI app onto Gradio
+# Mount FastAPI app onto Gradio - Hugging Face Spaces runner hosts this app on port 7860 automatically
 app = gr.mount_gradio_app(fastapi_app, demo, path="/gradio")
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 7860))
-    uvicorn.run(app, host="0.0.0.0", port=port)

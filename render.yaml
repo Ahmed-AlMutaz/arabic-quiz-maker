@@ -2,11 +2,13 @@
 services:
   - type: web
     name: arabic-quiz-maker
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    env: docker
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: GEMINI_API_KEY
         sync: false
       - key: ENVIRONMENT
         value: production
+      - key: PORT
+        value: 7860
+    healthCheckPath: /health

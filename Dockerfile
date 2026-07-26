@@ -1,6 +1,11 @@
 # Dockerfile for Enterprise Arabic Exam SaaS (Quiz Maker)
 FROM python:3.11-slim AS base
 
+# Prevent interactive prompts during installation
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PORT=7860
+
 # System dependencies for OCR (Tesseract Arabic), OpenCV, and build tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
     tesseract-ocr \
@@ -20,22 +25,17 @@ COPY requirements.txt .
 # Install CPU-only PyTorch first to keep Docker image lightweight
 RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
 
-# Install dependencies
+# Install remaining dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application source code
-COPY app/ ./app/
-COPY README.md .
+# Copy all application source code & files
+COPY . .
 
-# Create storage directory structure
-RUN mkdir -p /app/storage/temp /app/storage/exams
+# Create storage directory structure with non-root write permissions
+RUN mkdir -p /app/storage/temp /app/storage/exams && chmod -R 777 /app/storage
 
-# Expose port (8000 for FastAPI / HuggingFace Spaces standard 7860)
+# Expose Hugging Face Spaces standard port
 EXPOSE 7860
-
-# Environment variables
-ENV PYTHONUNBUFFERED=1 \
-    PORT=7860
 
 # Run application using Uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860"]

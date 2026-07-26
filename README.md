@@ -3,12 +3,9 @@ title: Quiz Maker
 emoji: 📝
 colorFrom: blue
 colorTo: indigo
-sdk: gradio
-sdk_version: 4.26.0
-app_file: app.py
-pinned: false
+sdk: docker
+app_port: 7860
 ---
-
 # Enterprise Arabic Exam Generator SaaS (Quiz Maker)
 
 An enterprise-grade, production-ready AI SaaS platform for generating professional Arabic examinations and model answer keys from lesson images or text documents using OCR, Tree-Based (Parent-Child) Chunking, Hybrid Retrieval (BM25 + Qdrant Dense Vector Search), Reranking, LangGraph state orchestration, Gemini 1.5/2.0, and RTL Word (`python-docx`) document generation.

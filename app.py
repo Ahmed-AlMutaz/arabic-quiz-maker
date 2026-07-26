@@ -1,25 +1,25 @@
 import os
-import time
-import threading
-import uvicorn
 import gradio as gr
+import uvicorn
 from app.main import app as fastapi_app
 
-PORT = int(os.environ.get("PORT", 7860))
-GRADIO_PORT = PORT + 1  # e.g. 7861 for Gradio wrapper
-
-def run_fastapi():
-    uvicorn.run(fastapi_app, host="127.0.0.1", port=PORT, log_level="warning")
-
-fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
-fastapi_thread.start()
-time.sleep(4)
-
-with gr.Blocks(title="Arabic Quiz Maker") as demo:
-    gr.HTML(f"""
-    <iframe src="http://127.0.0.1:{PORT}/"
-        style="width:100%;height:96vh;border:none;display:block;">
-    </iframe>
+# ─── Mount Gradio onto FastAPI ────────────────────────────────────────────────
+# Gradio is served at /gradio path, FastAPI owns the root (static UI + API)
+with gr.Blocks(title="Arabic Quiz Maker - مولد الامتحانات") as demo:
+    gr.HTML("""
+    <div style="width:100%;height:96vh;margin:0;padding:0;overflow:hidden;">
+        <iframe src="/"
+            style="width:100%;height:100%;border:none;display:block;"
+            allow="camera;microphone;clipboard-write">
+        </iframe>
+    </div>
     """)
 
-demo.launch(server_name="0.0.0.0", server_port=GRADIO_PORT, ssr_mode=False)
+# Mount Gradio onto FastAPI at /gradio path
+app = gr.mount_gradio_app(fastapi_app, demo, path="/gradio")
+
+# ─── Start Server ─────────────────────────────────────────────────────────────
+# HF Spaces Gradio SDK runs `python app.py` - we run uvicorn here at top level
+# so it blocks and keeps the process alive on port 7860
+port = int(os.environ.get("PORT", 7860))
+uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")

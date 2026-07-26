@@ -10,10 +10,16 @@ class OCREngine:
     """Robust Arabic OCR Engine using Pytesseract / EasyOCR with Gemini 1.5 Flash Vision Fallback."""
 
     def __init__(self):
-        self.api_key = settings.get_gemini_api_key()
-        genai.configure(api_key=self.api_key)
-        self.vision_model = genai.GenerativeModel("gemini-2.5-flash")
+        self._vision_model = None
         self._easyocr_reader = None
+
+    @property
+    def vision_model(self):
+        if self._vision_model is None:
+            self.api_key = settings.get_gemini_api_key()
+            genai.configure(api_key=self.api_key)
+            self._vision_model = genai.GenerativeModel("gemini-2.5-flash")
+        return self._vision_model
 
     def _get_easyocr_reader(self):
         if self._easyocr_reader is None:

@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, Any
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field
 
@@ -17,8 +17,8 @@ class Settings(BaseSettings):
 
     # Qdrant Vector DB
     QDRANT_HOST: str = "localhost"
-    QDRANT_PORT: int = 6333
-    QDRANT_GRPC_PORT: int = 6334
+    QDRANT_PORT: Any = 6333
+    QDRANT_GRPC_PORT: Any = 6334
     QDRANT_API_KEY: Optional[str] = None
     QDRANT_COLLECTION_NAME: str = "arabic_lessons"
 
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
 
     # Redis & Celery
     REDIS_HOST: str = "localhost"
-    REDIS_PORT: int = 6379
+    REDIS_PORT: Any = 6379
     REDIS_URL: str = "redis://localhost:6379/0"
 
     # RAG & Chunking Config

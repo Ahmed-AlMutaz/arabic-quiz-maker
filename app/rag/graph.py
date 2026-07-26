@@ -26,10 +26,16 @@ class LangGraphRAGPipeline:
     """LangGraph State Graph Orchestration for Arabic Exam Generation."""
 
     def __init__(self):
-        self.api_key = settings.get_gemini_api_key()
-        genai.configure(api_key=self.api_key)
-        self.llm = genai.GenerativeModel(settings.LLM_MODEL)
+        self._llm = None
         self.graph = self._build_graph()
+
+    @property
+    def llm(self):
+        if self._llm is None:
+            self.api_key = settings.get_gemini_api_key()
+            genai.configure(api_key=self.api_key)
+            self._llm = genai.GenerativeModel(settings.LLM_MODEL)
+        return self._llm
 
     def _retrieve_node(self, state: RAGState) -> Dict[str, Any]:
         logger.info("Executing LangGraph Node: Hybrid Retrieval", lesson_id=state["lesson_id"])

@@ -1,12 +1,10 @@
 ---
-title: Enterprise Arabic Exam SaaS Generator (Quiz Maker)
+title: Quiz Maker
 emoji: 📝
 colorFrom: blue
 colorTo: indigo
-sdk: gradio
-sdk_version: 4.19.0
-app_file: app.py
-pinned: false
+sdk: docker
+app_port: 7860
 ---
 
 # Enterprise Arabic Exam Generator SaaS (Quiz Maker)

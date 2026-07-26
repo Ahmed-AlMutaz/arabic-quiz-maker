@@ -1,14 +1,23 @@
+import os
 import gradio as gr
-import spaces
-import torch
+from app.main import app as fastapi_app
 
-zero = torch.Tensor([0]).cuda()
-print(zero.device) # <-- 'cpu' 🤔
+custom_css = """
+body { direction: rtl; text-align: right; }
+iframe { width: 100%; height: 950px; border: none; border-radius: 12px; }
+"""
 
-@spaces.GPU
-def greet(n):
-    print(zero.device) # <-- 'cuda:0' 🤗
-    return f"Hello {zero + n} Tensor"
+with gr.Blocks(title="مولد الامتحانات العربي 📝", css=custom_css) as demo:
+    gr.HTML("""
+    <div style="width:100%;height:96vh;margin:0;padding:0;">
+      <iframe src="/static/index.html"
+        style="width:100%;height:100%;border:none;display:block;">
+      </iframe>
+    </div>
+    """)
 
-demo = gr.Interface(fn=greet, inputs=gr.Number(), outputs=gr.Text())
-demo.launch()
+# Mount FastAPI application onto Gradio demo
+app = gr.mount_gradio_app(fastapi_app, demo, path="/gradio_app")
+
+if __name__ == "__main__":
+    demo.launch(ssr_mode=False)

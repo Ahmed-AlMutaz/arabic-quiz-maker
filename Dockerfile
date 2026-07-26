@@ -36,5 +36,5 @@ USER user
 # Expose port
 EXPOSE 7860
 
-# Run FastAPI application using Uvicorn
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "1"]
+# Run FastAPI application using Uvicorn on the dynamic port assigned by the host
+CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1

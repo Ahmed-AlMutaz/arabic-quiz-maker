@@ -10,6 +10,9 @@ from app.core.logging import setup_logging, logger
 from app.core.exceptions import QuizMakerException, quiz_maker_exception_handler
 from app.api.v1.router import api_router
 
+
+print(">>> MAIN.PY LOADED <<<")
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(debug=settings.DEBUG)

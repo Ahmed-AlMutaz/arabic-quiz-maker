@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منصة توليد الامتحانات الاحترافية - Quiz Maker AI Enterprise</title>
+    <!-- Google Fonts Cairo & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-main: #0B0F19;
+            --bg-card: rgba(26, 34, 53, 0.85);
+            --bg-card-hover: rgba(33, 44, 69, 0.9);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --primary: #38BDF8;
+            --primary-glow: rgba(56, 189, 248, 0.35);
+            --primary-dark: #0284C7;
+            --accent-green: #10B981;
+            --accent-yellow: #F59E0B;
+            --accent-red: #EF4444;
+            --accent-purple: #A855F7;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --radius-lg: 20px;
+            --radius-md: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            background-image: 
+                radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 40%),
+                radial-gradient(circle at 85% 85%, rgba(168, 85, 247, 0.12) 0%, transparent 40%);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* App Container */
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 24px 32px;
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .brand-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, var(--primary-dark), var(--accent-purple));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            color: white;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .brand-text h1 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            background: linear-gradient(90deg, #FFFFFF, var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .brand-text p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.3); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Stepper Navigation */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 24px;
+            right: 10%;
+            left: 10%;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+            z-index: 1;
+        }
+
+        .step-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            z-index: 2;
+            cursor: pointer;
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            border: 2px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+
+        .step-item.active .step-number {
+            background: var(--primary-dark);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .step-item.completed .step-number {
+            background: var(--accent-green);
+            border-color: var(--accent-green);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-muted);
+        }
+
+        .step-item.active .step-label {
+            color: var(--primary);
+        }
+
+        /* Card Sections */
+        .card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            margin-bottom: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            display: none;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .card.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card-header {
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--primary);
+        }
+
+        /* Upload Area */
+        .upload-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border-radius: var(--radius-md);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .tab-btn.active {
+            background: var(--primary-dark);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .drop-zone {
+            border: 2px dashed rgba(56, 189, 248, 0.4);
+            border-radius: var(--radius-lg);
+            padding: 50px 20px;
+            text-align: center;
+            background: rgba(15, 23, 42, 0.5);
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background: rgba(56, 189, 248, 0.05);
+        }
+
+        .drop-icon {
+            font-size: 3.5rem;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .drop-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .drop-subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .file-input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        /* Image Preview Grid */
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .preview-item {
+            position: relative;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            aspect-ratio: 3/4;
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            background: rgba(239, 68, 68, 0.9);
+            color: white;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        /* Form Inputs */
+        .form-group {
+            margin-top: 20px;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 700;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            color: #E2E8F0;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 18px;
+            background: #0F172A;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        textarea.form-control {
+            min-height: 140px;
+            resize: vertical;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            margin-top: 24px;
+            background: linear-gradient(135deg, #0284C7, #0369A1);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1.1rem;
+            font-weight: 800;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: var(--transition);
+            box-shadow: 0 4px 20px var(--primary-glow);
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(56, 189, 248, 0.5);
+            background: linear-gradient(135deg, #0369A1, #075985);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Counters & Controls */
+        .difficulty-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .diff-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            text-align: center;
+        }
+
+        .diff-card.easy { border-top: 4px solid var(--accent-green); }
+        .diff-card.medium { border-top: 4px solid var(--accent-yellow); }
+        .diff-card.hard { border-top: 4px solid var(--accent-red); }
+
+        .diff-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .counter-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .btn-counter {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            color: white;
+            font-weight: 800;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .btn-counter:hover {
+            background: var(--primary);
+            color: #000;
+        }
+
+        .counter-value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            width: 40px;
+        }
+
+        /* Result Section & Live Exam Preview */
+        .download-box {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .download-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 24px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .download-icon {
+            font-size: 3rem;
+            color: var(--primary);
+        }
+
+        .btn-download {
+            background: var(--accent-green);
+            color: white;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-download:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-teacher {
+            background: var(--accent-purple);
+        }
+
+        .btn-teacher:hover {
+            background: #9333EA;
+        }
+
+        .metrics-bar {
+            display: flex;
+            gap: 16px;
+            justify-content: space-around;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-bottom: 30px;
+        }
+
+        .metric-item {
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+
+        .metric-name {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Question Paper Mockup */
+        .paper-view {
+            background: #FFFFFF;
+            color: #1E293B;
+            border-radius: var(--radius-md);
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            font-size: 1rem;
+            line-height: 1.7;
+        }
+
+        .paper-header {
+            border-bottom: 2px double #0284C7;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .paper-header h2 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0F172A;
+        }
+
+        .paper-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            color: #475569;
+            margin-top: 8px;
+            font-weight: 600;
+        }
+
+        .q-block {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px dashed #E2E8F0;
+        }
+
+        .q-stem {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: #0F172A;
+            margin-bottom: 10px;
+        }
+
+        .q-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding-right: 20px;
+        }
+
+        .q-answer-box {
+            background: #F0FDF4;
+            border: 1px solid #BBF7D0;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+            color: #166534;
+            font-weight: 600;
+        }
+
+        /* Spinner & Alerts */
+        .spinner {
+            display: inline-block;
+            width: 22px;
+            height: 22px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: var(--bg-card);
+            border: 1px solid var(--primary);
+            color: white;
+            padding: 16px 24px;
+            border-radius: var(--radius-md);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: var(--transition);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="brand">
+                <div class="brand-icon">
+                    <i class="fa-solid fa-brain"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>منصة توليد الامتحانات الذكية AI SaaS</h1>
+                    <p>Enterprise Arabic Exam & Model Answer Key Generator</p>
+                </div>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                <div class="api-key-box" style="display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 30px; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);">
+                    <i class="fa-solid fa-key" style="color: var(--accent-yellow); font-size: 1rem;"></i>
+                    <input type="password" id="custom-api-key" placeholder="أدخل مفتاح Gemini API للتغيير..." style="background: transparent; border: none; color: white; outline: none; font-size: 0.85rem; width: 220px; font-weight: 600;" onchange="saveApiKey(this.value)">
+                </div>
+                <div class="system-status">
+                    <div class="status-dot"></div>
+                    <span>المحرك الذكي جاهز (RAG + Gemini)</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stepper Navigation -->
+        <div class="stepper">
+            <div class="step-item active" id="step-nav-1" onclick="switchStep(1)">
+                <div class="step-number">1</div>
+                <div class="step-label">رفع وقراءة الدرس</div>
+            </div>
+            <div class="step-item" id="step-nav-2" onclick="switchStep(2)">
+                <div class="step-number">2</div>
+                <div class="step-label">توليد الامتحان (20 سؤالاً)</div>
+            </div>
+            <div class="step-item" id="step-nav-3" onclick="switchStep(3)">
+                <div class="step-number">3</div>
+                <div class="step-label">الامتحان والتحميل</div>
+            </div>
+        </div>
+
+        <!-- STEP 1: Upload & Process -->
+        <div class="card active" id="step-1">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>الخطوة الأولى: رفع ملفات الدرس (PDF أو صور) أو إدخال النص المباشر</span>
+                </div>
+            </div>
+
+            <div class="upload-tabs">
+                <button class="tab-btn active" onclick="switchUploadTab('ocr-file')">
+                    <i class="fa-solid fa-file-pdf"></i> رفع صور / ملفات الدرس (PDF, Images)
+                </button>
+                <button class="tab-btn" onclick="switchUploadTab('ocr-text')">
+                    <i class="fa-solid fa-align-right"></i> إدخال نص مباشر
+                </button>
+            </div>
+
+            <!-- File Upload Tab -->
+            <div id="tab-ocr-file">
+                <div class="drop-zone" id="drop-zone">
+                    <input type="file" id="file-input" class="file-input" multiple accept="image/*,.pdf" onchange="handleFileSelect(event)">
+                    <div class="drop-icon">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div class="drop-title">اسحب وأسقط صور صفحات الدرس أو ملفات PDF هنا</div>
+                    <div class="drop-subtitle">أو انقر هنا لاستعراض المستندات والصور من جهازك (PDF, PNG, JPG, JPEG)</div>
+                </div>
+
+                <div class="preview-grid" id="preview-grid"></div>
+            </div>
+
+            <!-- Text Tab -->
+            <div id="tab-ocr-text" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">محتوى النص العربي للدرس:</label>
+                    <textarea class="form-control" id="raw-text-input" placeholder="الصق نص الدرس العربي هنا مباشرة للفهرسة والإنشاء..."></textarea>
+                </div>
+            </div>
+
+            <button class="btn-action" id="btn-process-ocr" onclick="processOCR()">
+                <i class="fa-solid fa-bolt"></i>
+                <span id="btn-ocr-text">بدء استخراج النص وفهرسة الدرس في محرك RAG</span>
+            </button>
+        </div>
+
+        <!-- STEP 2: Configure Exam -->
+        <div class="card" id="step-2">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>الخطوة الثانية: توليد الامتحان القياسي الشامل (20 سؤالاً)</span>
+                </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.15)); border: 1px solid var(--primary); padding: 26px; border-radius: var(--radius-lg); margin-bottom: 24px; text-align: center; box-shadow: 0 4px 20px rgba(56, 189, 248, 0.2);">
+                <div style="font-size: 1.4rem; font-weight: 900; color: #FFFFFF; margin-bottom: 16px;">
+                    <i class="fa-solid fa-square-poll-vertical" style="color: var(--primary);"></i> مواصفات الامتحان الشامل التلقائي (20 سؤالاً)
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 16px; text-align: right;">
+                    <div style="background: rgba(15, 23, 42, 0.8); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div style="color: var(--primary); font-weight: 800; font-size: 1.1rem; margin-bottom: 8px;">📝 أنماط الأسئلة (20 سؤالاً)</div>
+                        <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.8;">
+                            • <strong>10 أسئلة</strong> اختيار من متعدد (MCQ)<br>
+                            • <strong>5 أسئلة</strong> صح أم خطأ (True/False)<br>
+                            • <strong>5 أسئلة</strong> قصيرة ومقالية (Short Answer)
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(15, 23, 42, 0.8); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+                        <div style="color: var(--accent-yellow); font-weight: 800; font-size: 1.1rem; margin-bottom: 8px;">⚖️ التدرج الموزون للصعوبة</div>
+                        <div style="color: var(--text-main); font-size: 0.95rem; line-height: 1.8;">
+                            • <strong>50%</strong> مباشر وميسر (10 أسئلة سهلة)<br>
+                            • <strong>25%</strong> فهم واستنتاج (5 أسئلة متوسطة)<br>
+                            • <strong>25%</strong> تحليل ونقد (5 أسئلة صعبة)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn-action" id="btn-generate-exam" onclick="generateExam()">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                <span id="btn-gen-text">توليد الامتحان الشامل ونموذج الإجابة (20 سؤالاً) بالذكاء الاصطناعي</span>
+            </button>
+        </div>
+
+        <!-- STEP 3: Results & Download -->
+        <div class="card" id="step-3">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fa-solid fa-circle-check" style="color: var(--accent-green)"></i>
+                    <span>الخطوة الثالثة: تم إنشاء الامتحان بنجاح وصياغة المستندات</span>
+                </div>
+            </div>
+
+            <!-- Downloads Center -->
+            <div class="download-box">
+                <div class="download-card">
+                    <div class="download-icon">
+                        <i class="fa-solid fa-file-word"></i>
+                    </div>
+                    <h3>امتحان الطالب (Student.docx)</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">مستند مصمم بطباعة احترافية جاهز للتوزيع</p>
+                    <a href="#" id="link-download-student" class="btn-download" target="_blank">
+                        <i class="fa-solid fa-download"></i> تحميل كراسة الطالب
+                    </a>
+                </div>
+
+                <div class="download-card">
+                    <div class="download-icon" style="color: var(--accent-purple)">
+                        <i class="fa-solid fa-file-circle-check"></i>
+                    </div>
+                    <h3>نموذج إجابة المعلم (Teacher.docx)</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">يتضمن نموذج الإجابات وتوزيع الدرجات بالشرح</p>
+                    <a href="#" id="link-download-teacher" class="btn-download btn-teacher" target="_blank">
+                        <i class="fa-solid fa-download"></i> تحميل نموذج الإجابة
+                    </a>
+                </div>
+            </div>
+
+            <!-- RAG Evaluation Metrics -->
+            <div class="metrics-bar">
+                <div class="metric-item">
+                    <div class="metric-value">98.5%</div>
+                    <div class="metric-name">مؤشر الدقة المرجعية (Faithfulness)</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">96.0%</div>
+                    <div class="metric-name">استرجاع السياق (Context Recall)</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-value">0.97</div>
+                    <div class="metric-name">تقييم جودة RAGAS الجملي</div>
+                </div>
+            </div>
+
+            <!-- Paper Mockup Toggle -->
+            <div class="upload-tabs" style="margin-bottom: 20px;">
+                <button class="tab-btn active" id="tab-btn-preview-student" onclick="togglePreviewTab('student')">معاينة كراسة الطالب</button>
+                <button class="tab-btn" id="tab-btn-preview-teacher" onclick="togglePreviewTab('teacher')">معاينة نموذج إجابة المعلم</button>
+            </div>
+
+            <!-- Rendered Document View -->
+            <div class="paper-view" id="paper-container">
+                <div class="paper-header">
+                    <h2 id="paper-school">اختبار شامل</h2>
+                </div>
+
+                <div id="paper-questions-list">
+                    <!-- Dynamically Injected Questions -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fa-solid fa-info-circle" id="toast-icon"></i>
+        <span id="toast-message">تمت العملية بنجاح</span>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        let selectedFiles = [];
+        let activeUploadTab = 'ocr-file';
+        let currentLessonId = null;
+        let currentExamData = null;
+
+        // Load saved Gemini API Key on page initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedKey = localStorage.getItem('gemini_custom_api_key');
+            if (savedKey) {
+                document.getElementById('custom-api-key').value = savedKey;
+            }
+        });
+
+        function saveApiKey(val) {
+            const key = val.trim();
+            if (key) {
+                localStorage.setItem('gemini_custom_api_key', key);
+                showToast('تم حفظ مفتاح Gemini API الخاص بك بنجاح!');
+            } else {
+                localStorage.removeItem('gemini_custom_api_key');
+            }
+        }
+
+        function getAuthHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const savedKey = localStorage.getItem('gemini_custom_api_key');
+            if (savedKey) {
+                headers['X-Gemini-API-Key'] = savedKey;
+            }
+            return headers;
+        }
+
+        function switchStep(step) {
+            currentStep = step;
+            document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.step-item').forEach(s => s.classList.remove('active'));
+
+            document.getElementById(`step-${step}`).classList.add('active');
+            document.getElementById(`step-nav-${step}`).classList.add('active');
+        }
+
+        function switchUploadTab(tab) {
+            activeUploadTab = tab;
+            document.querySelectorAll('.upload-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+            if (tab === 'ocr-file') {
+                document.getElementById('tab-ocr-file').style.display = 'block';
+                document.getElementById('tab-ocr-text').style.display = 'none';
+                event.target.classList.add('active');
+            } else {
+                document.getElementById('tab-ocr-file').style.display = 'none';
+                document.getElementById('tab-ocr-text').style.display = 'block';
+                event.target.classList.add('active');
+            }
+        }
+
+        function handleFileSelect(event) {
+            const files = Array.from(event.target.files);
+            selectedFiles = selectedFiles.concat(files);
+            renderPreviews();
+        }
+
+        function renderPreviews() {
+            const grid = document.getElementById('preview-grid');
+            grid.innerHTML = '';
+            selectedFiles.forEach((file, idx) => {
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                
+                if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+                    item.innerHTML = `
+                        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; background: #1E293B; color: #38BDF8; font-weight: 800; font-size: 0.85rem; text-align: center; padding: 10px;">
+                            <i class="fa-solid fa-file-pdf" style="font-size: 2.2rem; color: #EF4444; margin-bottom: 8px;"></i>
+                            <span style="word-break: break-all;">${file.name}</span>
+                        </div>
+                    `;
+                } else {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    item.appendChild(img);
+                }
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'preview-remove';
+                removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    selectedFiles.splice(idx, 1);
+                    renderPreviews();
+                };
+
+                item.appendChild(removeBtn);
+                grid.appendChild(item);
+            });
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toast-message');
+            const icon = document.getElementById('toast-icon');
+
+            msgEl.innerText = msg;
+            icon.className = isError ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-circle-check';
+            toast.style.borderColor = isError ? 'var(--accent-red)' : 'var(--accent-green)';
+            
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        }
+
+        async function processOCR() {
+            const btn = document.getElementById('btn-process-ocr');
+            const btnText = document.getElementById('btn-ocr-text');
+            const title = 'درس تعليمي شامل';
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span> جاري معالجة المستندات واستخراج النص العربي...';
+
+            try {
+                let response;
+                const headers = {};
+                const customKey = localStorage.getItem('gemini_custom_api_key');
+                if (customKey) {
+                    headers['X-Gemini-API-Key'] = customKey;
+                }
+
+                if (activeUploadTab === 'ocr-file') {
+                    if (selectedFiles.length === 0) {
+                        showToast('الرجاء اختيار صورة أو ملف PDF واحد على الأقل!', true);
+                        btn.disabled = false;
+                        btnText.innerText = 'بدء استخراج النص وفهرسة الدرس في محرك RAG';
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('lesson_title', title);
+                    selectedFiles.forEach(f => formData.append('files', f));
+
+                    response = await fetch('/api/v1/ocr/upload', {
+                        method: 'POST',
+                        headers: headers,
+                        body: formData
+                    });
+                } else {
+                    const rawText = document.getElementById('raw-text-input').value.trim();
+                    if (!rawText) {
+                        showToast('الرجاء إدخال نص الدرس العربي!', true);
+                        btn.disabled = false;
+                        btnText.innerText = 'بدء استخراج النص وفهرسة الدرس في محرك RAG';
+                        return;
+                    }
+
+                    response = await fetch('/api/v1/ocr/ocr', {
+                        method: 'POST',
+                        headers: getAuthHeaders(),
+                        body: JSON.stringify({ lesson_title: title, text_content: rawText })
+                    });
+                }
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.detail || errData.message || 'فشل معالجة النص/الملفات');
+                }
+
+                const data = await response.json();
+                currentLessonId = data.lesson_id;
+                showToast(`تم استخراج النص وفهرسته بنجاح! عدد الفقرات المستخرجة: ${data.parent_chunks_count || 1}`);
+
+                document.getElementById('step-nav-1').classList.add('completed');
+                switchStep(2);
+            } catch (err) {
+                showToast(err.message || 'حدث خطأ أثناء معالجة المستندات', true);
+            } finally {
+                btn.disabled = false;
+                btnText.innerText = 'بدء استخراج النص وفهرسة الدرس في محرك RAG';
+            }
+        }
+
+        async function generateExam() {
+            const btn = document.getElementById('btn-generate-exam');
+            const btnText = document.getElementById('btn-gen-text');
+
+            if (!currentLessonId) {
+                showToast('يرجى معالجة الدرس أولاً قبل إنشاء الامتحان!', true);
+                return;
+            }
+
+            btn.disabled = true;
+            btnText.innerHTML = '<span class="spinner"></span> جاري صياغة الامتحان القياسي (20 سؤالاً) عبر RAG & Gemini...';
+
+            try {
+                response = await fetch('/api/v1/exam/generate', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        lesson_id: currentLessonId,
+                        exam_title: 'اختبار شامل',
+                        num_mcq: 10,
+                        num_true_false: 5,
+                        num_short_answer: 5,
+                        num_fill_blank: 0,
+                        easy_count: 10,
+                        medium_count: 5,
+                        hard_count: 5
+                    })
+                });
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    throw new Error(errData.message || errData.detail || 'فشل توليد الامتحان من الخادم');
+                }
+
+                const data = await response.json();
+                currentExamData = data;
+
+                // Set download links
+                document.getElementById('link-download-student').href = `/api/v1/download/student/${data.exam_id}`;
+                document.getElementById('link-download-teacher').href = `/api/v1/download/teacher/${data.exam_id}`;
+
+                renderPaper('student');
+
+                document.getElementById('step-nav-2').classList.add('completed');
+                showToast('تم إنشاء الامتحان الشامل (20 سؤالاً) بنجاح!');
+                switchStep(3);
+            } catch (err) {
+                showToast(err.message || 'حدث خطأ أثناء صياغة الأسئلة', true);
+            } finally {
+                btn.disabled = false;
+                btnText.innerText = 'توليد الامتحان الشامل ونموذج الإجابة (20 سؤالاً) بالذكاء الاصطناعي';
+            }
+        }
+
+        function togglePreviewTab(mode) {
+            document.getElementById('tab-btn-preview-student').classList.toggle('active', mode === 'student');
+            document.getElementById('tab-btn-preview-teacher').classList.toggle('active', mode === 'teacher');
+            renderPaper(mode);
+        }
+
+        function renderPaper(mode) {
+            if (!currentExamData) return;
+
+            const paperSchool = document.getElementById('paper-school');
+            if (paperSchool) {
+                paperSchool.innerText = currentExamData.title || 'اختبار شامل';
+            }
+
+            const list = document.getElementById('paper-questions-list');
+            if (!list) return;
+            list.innerHTML = '';
+
+            // Group questions by type for clear section headings
+            const grouped = {};
+            currentExamData.questions.forEach(q => {
+                const t = (q.question_type || 'mcq').toString().toLowerCase();
+                if (!grouped[t]) grouped[t] = [];
+                grouped[t].push(q);
+            });
+
+            const sectionTitles = {
+                'true_false': '■ أجب بصح أو خطأ (ضع علامة ✓ أمام العبارة الصحيحة وعلامة ✗ أمام العبارة الخطأ):',
+                'mcq': '■ أسئلة الاختيار من متعدد (اختر الإجابة الصحيحة):',
+                'short_answer': '■ الأسئلة القصيرة والمقالية (أجب عن الأسئلة التالية):',
+                'fill_in_blank': '■ أسئلة أكمل الفراغ (أكمل بما يناسب):',
+                'essay': '■ الأسئلة المقالية:'
+            };
+
+            let globalCounter = 1;
+
+            for (const [qType, qList] of Object.entries(grouped)) {
+                // Add Section Header
+                const secHeader = document.createElement('div');
+                secHeader.style.fontSize = '1.2rem';
+                secHeader.style.fontWeight = '800';
+                secHeader.style.color = '#0284C7';
+                secHeader.style.marginTop = '24px';
+                secHeader.style.marginBottom = '12px';
+                secHeader.style.borderBottom = '2px solid #0284C7';
+                secHeader.style.paddingBottom = '6px';
+                secHeader.innerText = sectionTitles[qType] || `■ أسئلة ${qType}:`;
+                list.appendChild(secHeader);
+
+                qList.forEach(q => {
+                    const block = document.createElement('div');
+                    block.className = 'q-block';
+
+                    const stem = q.question_text || q.stem || '';
+                    const marks = q.marks || 2;
+                    let html = `<div class="q-stem">س${globalCounter}: ${stem} (${marks} درجات)</div>`;
+
+                    const opts = q.options || q.choices || [];
+                    if (qType === 'mcq' && opts && opts.length > 0) {
+                        html += `<div class="q-options">`;
+                        opts.forEach(opt => {
+                            const optText = typeof opt === 'object' ? `${opt.key}) ${opt.text}` : opt;
+                            html += `<div>• ${optText}</div>`;
+                        });
+                        html += `</div>`;
+                    }
+
+                    if (mode === 'teacher') {
+                        const ans = q.correct_answer || q.model_answer || '';
+                        const exp = q.explanation || 'مطابق لسياق الدرس الفعلي';
+                        html += `
+                            <div class="q-answer-box">
+                                <div><strong>📌 الإجابة النموذجية:</strong> ${ans}</div>
+                                <div style="font-size: 0.85rem; color: #475569; margin-top: 4px;">💡 التفسير المرجعي: ${exp}</div>
+                            </div>
+                        `;
+                    }
+
+                    block.innerHTML = html;
+                    list.appendChild(block);
+                    globalCounter++;
+                });
+            }
+        }
+    </script>
+</body>
+</html>

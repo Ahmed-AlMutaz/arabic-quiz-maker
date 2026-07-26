@@ -1,6 +1,12 @@
 import os
 import gradio as gr
+import spaces
 from app.main import app as fastapi_app
+
+# Dummy function to satisfy ZeroGPU validator on Hugging Face Spaces startup
+@spaces.GPU
+def dummy_gpu_validator():
+    return None
 
 custom_css = """
 body { direction: rtl; text-align: right; }

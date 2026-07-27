@@ -1,6 +1,7 @@
 import json
-from typing import Dict, Any, List, TypedDict
+from typing import Dict, Any, List, TypedDict, Optional
 import google.generativeai as genai
+import httpx
 from langgraph.graph import StateGraph, END
 from app.core.config import settings
 from app.core.logging import logger
@@ -8,6 +9,34 @@ from app.rag.hybrid_retriever import hybrid_retriever
 from app.rag.reranker import reranker
 from app.rag.prompts import EXAM_GENERATION_SYSTEM_PROMPT, EXAM_GENERATION_USER_PROMPT
 from app.schemas.exam import GeneratedExam
+
+def extract_and_parse_json(text: str) -> Dict[str, Any]:
+    text = text.strip()
+    # Remove markdown code blocks if present
+    if text.startswith("```"):
+        parts = text.split("```")
+        for part in parts:
+            part_clean = part.strip()
+            if part_clean.startswith("json"):
+                part_clean = part_clean[4:].strip()
+            if part_clean.startswith("{") or part_clean.startswith("["):
+                try:
+                    return json.loads(part_clean)
+                except Exception:
+                    pass
+    
+    # Try finding the first '{' and last '}'
+    first_brace = text.find("{")
+    last_brace = text.rfind("}")
+    if first_brace != -1 and last_brace != -1 and last_brace > first_brace:
+        candidate = text[first_brace:last_brace+1]
+        try:
+            return json.loads(candidate)
+        except Exception:
+            pass
+            
+    # Try direct parse
+    return json.loads(text)
 
 class RAGState(TypedDict):
     lesson_id: str
@@ -20,6 +49,7 @@ class RAGState(TypedDict):
     constructed_prompt: str
     generated_json: Dict[str, Any]
     generated_exam: Any
+    gemini_api_key: Optional[str]
     error: str
 
 class LangGraphRAGPipeline:
@@ -124,42 +154,208 @@ class LangGraphRAGPipeline:
             except Exception as oe:
                 logger.warning("Local Ollama generation failed, falling back to Gemini", error=str(oe))
 
-        # 2. FALLBACK: Gemini Cloud (with rich model fallback list)
-        import time
-        gemini_models = [
-            "gemini-2.5-flash-lite",
-            "gemini-2.5-flash",
-            "gemini-flash-latest",
-            "gemini-2.0-flash-lite",
-            "gemini-3.1-flash-lite"
+        # 2. FALLBACK 1: Gemini Cloud (with rich model fallback list)
+        custom_key = state.get("gemini_api_key")
+        gemini_api_key = custom_key if (custom_key and custom_key.strip()) else None
+        
+        if not gemini_api_key:
+            try:
+                gemini_api_key = settings.get_gemini_api_key()
+            except Exception:
+                pass
+                
+        def is_valid_gemini_key(key: Optional[str]) -> bool:
+            if not key:
+                return False
+            key_strip = key.strip()
+            if not key_strip or "your-gemini-api-key" in key_strip.lower() or len(key_strip) < 10:
+                return False
+            return True
+
+        if is_valid_gemini_key(gemini_api_key):
+            import time
+            gemini_models = [
+                "gemini-2.5-flash-lite",
+                "gemini-2.5-flash",
+                "gemini-flash-latest",
+                "gemini-2.0-flash-lite",
+                "gemini-3.1-flash-lite"
+            ]
+            
+            try:
+                genai.configure(api_key=gemini_api_key.strip())
+            except Exception as ge:
+                logger.warning("Failed to configure genai globally", error=str(ge))
+
+            for g_model in gemini_models:
+                for attempt in range(2):
+                    try:
+                        logger.info("Generating Arabic Exam using Gemini Cloud Fallback", model=g_model, attempt=attempt+1)
+                        model_instance = genai.GenerativeModel(
+                            g_model,
+                            system_instruction=EXAM_GENERATION_SYSTEM_PROMPT
+                        )
+                        response = model_instance.generate_content(
+                            state['constructed_prompt'],
+                            generation_config={"response_mime_type": "application/json"}
+                        )
+                        parsed_json = extract_and_parse_json(response.text)
+                        return {"generated_json": parsed_json}
+                    except Exception as e:
+                        err_str = str(e)
+                        logger.warning(f"Gemini {g_model} fallback failed (attempt {attempt+1})", error=err_str)
+                        if "429" in err_str or "quota" in err_str.lower():
+                            time.sleep(2)
+                            continue
+                        else:
+                            break
+
+        # 3. FALLBACK 2: Groq Cloud
+        import os
+        groq_api_key = os.getenv("GROQ_API_KEY")
+        groq_url = "https://api.groq.com/openai/v1/chat/completions"
+        groq_models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
+        
+        for g_model in groq_models:
+            try:
+                logger.info("Generating Arabic Exam using Groq Fallback", model=g_model)
+                payload = {
+                    "model": g_model,
+                    "messages": [
+                        {"role": "system", "content": EXAM_GENERATION_SYSTEM_PROMPT},
+                        {"role": "user", "content": state['constructed_prompt']}
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 4000,
+                    "response_format": {"type": "json_object"}
+                }
+                headers = {
+                    "Authorization": f"Bearer {groq_api_key}" if groq_api_key else "",
+                    "Content-Type": "application/json"
+                }
+                res = httpx.post(groq_url, json=payload, headers=headers, timeout=45.0)
+                if res.status_code == 200:
+                    resp_json = res.json()
+                    content = resp_json["choices"][0]["message"]["content"]
+                    parsed = extract_and_parse_json(content)
+                    return {"generated_json": parsed}
+                else:
+                    logger.warning(f"Groq API returned error status {res.status_code}", body=res.text)
+            except Exception as e:
+                logger.warning(f"Groq fallback failed for model {g_model}", error=str(e))
+
+        # 4. FALLBACK 3: OpenRouter Cloud
+        or_api_key = os.getenv("OPENROUTER_API_KEY")
+        or_url = "https://openrouter.ai/api/v1/chat/completions"
+        or_models = [
+            "google/gemini-2.5-flash",
+            "meta-llama/llama-3.3-70b-instruct",
+            "meta-llama/llama-3.1-8b-instruct:free",
+            "qwen/qwen-2.5-7b-instruct:free",
+            "google/gemma-2-9b-it:free"
         ]
-        for g_model in gemini_models:
-            for attempt in range(2):
-                try:
-                    logger.info("Generating Arabic Exam using Gemini Cloud Fallback", model=g_model, attempt=attempt+1)
-                    model_instance = genai.GenerativeModel(
-                        g_model,
-                        system_instruction=EXAM_GENERATION_SYSTEM_PROMPT
-                    )
-                    response = model_instance.generate_content(
-                        state['constructed_prompt'],
-                        generation_config={"response_mime_type": "application/json"}
-                    )
-                    raw_text = response.text.strip()
-                    if raw_text.startswith("```json"):
-                        raw_text = raw_text[7:]
-                    if raw_text.endswith("```"):
-                        raw_text = raw_text[:-3]
-                    parsed_json = json.loads(raw_text.strip())
-                    return {"generated_json": parsed_json}
-                except Exception as e:
-                    err_str = str(e)
-                    logger.warning(f"Gemini {g_model} fallback failed (attempt {attempt+1})", error=err_str)
-                    if "429" in err_str or "quota" in err_str.lower():
-                        time.sleep(2)
-                        continue
+        
+        for or_model in or_models:
+            try:
+                logger.info("Generating Arabic Exam using OpenRouter Fallback", model=or_model)
+                payload = {
+                    "model": or_model,
+                    "messages": [
+                        {"role": "system", "content": EXAM_GENERATION_SYSTEM_PROMPT},
+                        {"role": "user", "content": state['constructed_prompt']}
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 4000,
+                    "response_format": {"type": "json_object"}
+                }
+                headers = {
+                    "Authorization": f"Bearer {or_api_key}" if or_api_key else "",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://ahmed792-arabic-quiz-maker.hf.space/",
+                    "X-Title": "Arabic Quiz Maker"
+                }
+                res = httpx.post(or_url, json=payload, headers=headers, timeout=45.0)
+                if res.status_code == 200:
+                    resp_json = res.json()
+                    content = resp_json["choices"][0]["message"]["content"]
+                    parsed = extract_and_parse_json(content)
+                    return {"generated_json": parsed}
+                else:
+                    logger.warning(f"OpenRouter API returned error status {res.status_code}", body=res.text)
+            except Exception as e:
+                logger.warning(f"OpenRouter fallback failed for model {or_model}", error=str(e))
+
+        # 5. FALLBACK 4: Mistral Cloud
+        mistral_api_key = os.getenv("MISTRAL_API_KEY")
+        mistral_url = "https://api.mistral.ai/v1/chat/completions"
+        mistral_models = ["mistral-large-latest", "mistral-small-latest"]
+        
+        for m_model in mistral_models:
+            try:
+                logger.info("Generating Arabic Exam using Mistral Fallback", model=m_model)
+                payload = {
+                    "model": m_model,
+                    "messages": [
+                        {"role": "system", "content": EXAM_GENERATION_SYSTEM_PROMPT},
+                        {"role": "user", "content": state['constructed_prompt']}
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 4000,
+                    "response_format": {"type": "json_object"}
+                }
+                headers = {
+                    "Authorization": f"Bearer {mistral_api_key}" if mistral_api_key else "",
+                    "Content-Type": "application/json"
+                }
+                res = httpx.post(mistral_url, json=payload, headers=headers, timeout=45.0)
+                if res.status_code == 200:
+                    resp_json = res.json()
+                    content = resp_json["choices"][0]["message"]["content"]
+                    parsed = extract_and_parse_json(content)
+                    return {"generated_json": parsed}
+                else:
+                    logger.warning(f"Mistral API returned error status {res.status_code}", body=res.text)
+            except Exception as e:
+                logger.warning(f"Mistral fallback failed for model {m_model}", error=str(e))
+
+        # 6. FALLBACK 5: Cohere Cloud
+        cohere_api_key = os.getenv("COHERE_API_KEY")
+        cohere_url = "https://api.cohere.com/v2/chat"
+        cohere_models = ["command-r-plus-08-2024", "command-r-plus"]
+        
+        for c_model in cohere_models:
+            try:
+                logger.info("Generating Arabic Exam using Cohere Fallback", model=c_model)
+                payload = {
+                    "model": c_model,
+                    "messages": [
+                        {"role": "system", "content": EXAM_GENERATION_SYSTEM_PROMPT},
+                        {"role": "user", "content": state['constructed_prompt']}
+                    ],
+                    "max_tokens": 4000,
+                    "response_format": {"type": "json_object"}
+                }
+                headers = {
+                    "Authorization": f"Bearer {cohere_api_key}" if cohere_api_key else "",
+                    "Content-Type": "application/json"
+                }
+                res = httpx.post(cohere_url, json=payload, headers=headers, timeout=45.0)
+                if res.status_code == 200:
+                    resp_json = res.json()
+                    content = resp_json["message"]["content"]
+                    raw_text = ""
+                    if isinstance(content, list):
+                        raw_text = content[0].get("text", "")
+                    elif isinstance(content, dict):
+                        raw_text = content.get("text", "")
                     else:
-                        break
+                        raw_text = str(content)
+                    parsed = extract_and_parse_json(raw_text)
+                    return {"generated_json": parsed}
+                else:
+                    logger.warning(f"Cohere API returned error status {res.status_code}", body=res.text)
+            except Exception as e:
+                logger.warning(f"Cohere fallback failed for model {c_model}", error=str(e))
 
         return {"error": "LLM Exam generation failed across all providers."}
 
@@ -191,12 +387,41 @@ class LangGraphRAGPipeline:
             if target_total <= 0:
                 target_total = max(1, easy_cnt + medium_cnt + hard_cnt)
 
+            # Programmatic deduplication based on normalized question text
+            seen_questions = set()
+            unique_questions = []
+            for q in questions:
+                q_text = str(q.get("question_text") or q.get("stem") or "").strip()
+                if not q_text:
+                    continue
+                import re
+                norm = q_text.lower()
+                norm = re.sub(r'[\u064B-\u0652]', '', norm)  # Remove diacritics
+                norm = re.sub(r'[أإآ]', 'ا', norm)
+                norm = re.sub(r'ة', 'ه', norm)
+                norm = re.sub(r'ى', 'ي', norm)
+                norm = re.sub(r'[^\w\s]', '', norm)
+                norm = re.sub(r'\s+', '', norm)  # Collapse spaces
+                
+                if norm not in seen_questions:
+                    seen_questions.add(norm)
+                    unique_questions.append(q)
+                else:
+                    logger.info("Removed duplicate question generated by LLM", question=q_text)
+            
+            questions = unique_questions
+            raw_data["questions"] = questions
+
             if len(questions) > target_total:
                 logger.info(f"Truncating LLM questions from {len(questions)} to requested {target_total}")
                 questions = questions[:target_total]
                 raw_data["questions"] = questions
             
             for q in questions:
+                # Force clean sequential IDs
+                q["id"] = f"q_{questions.index(q) + 1}"
+
+                # Normalize question_type
                 q_type = str(q.get("question_type", "")).lower().strip()
                 for vt in valid_types:
                     if vt in q_type:
@@ -205,6 +430,7 @@ class LangGraphRAGPipeline:
                 if q.get("question_type") not in valid_types:
                     q["question_type"] = "mcq"
 
+                # Normalize difficulty
                 diff = str(q.get("difficulty", "")).lower().strip()
                 for vd in valid_diffs:
                     if vd in diff:
@@ -212,6 +438,57 @@ class LangGraphRAGPipeline:
                         break
                 if q.get("difficulty") not in valid_diffs:
                     q["difficulty"] = "easy"
+
+                # Normalize question_text
+                q["question_text"] = str(q.get("question_text") or q.get("stem") or "")
+
+                # Normalize correct_answer (convert bool/numbers/etc. to string)
+                correct = q.get("correct_answer") or q.get("model_answer")
+                if correct is not None:
+                    if isinstance(correct, bool):
+                        q["correct_answer"] = "صح" if correct else "خطأ"
+                    else:
+                        correct_str = str(correct).strip()
+                        if q["question_type"] == "true_false":
+                            if correct_str.lower() in ("true", "yes", "correct", "t", "y", "1"):
+                                q["correct_answer"] = "صح"
+                            elif correct_str.lower() in ("false", "no", "incorrect", "f", "n", "0"):
+                                q["correct_answer"] = "خطأ"
+                            else:
+                                q["correct_answer"] = correct_str
+                        else:
+                            q["correct_answer"] = correct_str
+                else:
+                    q["correct_answer"] = ""
+
+                # Normalize explanation
+                q["explanation"] = str(q.get("explanation") or "")
+
+                # Normalize marks to int
+                try:
+                    q["marks"] = int(q.get("marks", 2))
+                except Exception:
+                    q["marks"] = 2
+
+                # Normalize options for MCQ
+                if q["question_type"] == "mcq":
+                    options = q.get("options") or q.get("choices") or []
+                    norm_opts = []
+                    if isinstance(options, list):
+                        for opt in options:
+                            if isinstance(opt, dict):
+                                opt_key = str(opt.get("key") or opt.get("id") or "").strip()
+                                opt_text = str(opt.get("text") or opt.get("value") or "").strip()
+                                if opt_key and opt_text:
+                                    norm_opts.append({"key": opt_key, "text": opt_text})
+                            elif isinstance(opt, str):
+                                keys = ["أ", "ب", "ج", "د"]
+                                idx = len(norm_opts)
+                                key = keys[idx] if idx < len(keys) else str(idx + 1)
+                                norm_opts.append({"key": key, "text": opt})
+                    q["options"] = norm_opts
+                else:
+                    q["options"] = None
             
             validated_exam = GeneratedExam(**raw_data)
             return {"generated_exam": validated_exam}

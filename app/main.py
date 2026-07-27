@@ -48,7 +48,7 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 # Static Files Directory Setup
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 if os.path.exists(static_dir):
-    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+    app.mount("/app-static", StaticFiles(directory=static_dir), name="app-static")
 
 # Health check & Root endpoint مضمون 100% لـ Hugging Face Spaces
 @app.get("/", include_in_schema=False)

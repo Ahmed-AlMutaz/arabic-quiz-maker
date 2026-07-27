@@ -15,7 +15,7 @@ async def generate_exam(request: ExamGenerationRequest, x_gemini_api_key: Option
     if x_gemini_api_key and x_gemini_api_key.strip():
         logger.info("Using custom user-provided Gemini API Key from header")
         genai.configure(api_key=x_gemini_api_key.strip())
-    exam = await exam_service.generate_exam(request)
+    exam = await exam_service.generate_exam(request, gemini_api_key=x_gemini_api_key)
     return exam
 
 @router.get("/status/{exam_id}", summary="Check Status of Exam Generation Task")
@@ -24,3 +24,12 @@ async def check_exam_status(exam_id: str):
     if not exam:
         return {"exam_id": exam_id, "status": "processing_or_not_found"}
     return {"exam_id": exam_id, "status": "completed", "student_url": exam.get("student_docx_url"), "teacher_url": exam.get("teacher_docx_url")}
+
+@router.get("/count", summary="Get total number of exams generated")
+async def get_exams_count():
+    try:
+        count = await mongo_manager.get_exams_count()
+        return {"count": count}
+    except Exception as e:
+        logger.error("Error fetching exams count", error=str(e))
+        return {"count": 0}

@@ -14,7 +14,7 @@ from app.core.exceptions import RAGPipelineError
 class ExamService:
     """Service layer managing LangGraph RAG exam generation and Word document output."""
 
-    async def generate_exam(self, request: ExamGenerationRequest) -> GeneratedExam:
+    async def generate_exam(self, request: ExamGenerationRequest, gemini_api_key: Optional[str] = None) -> GeneratedExam:
         logger.info("Initiating Exam Generation Service", lesson_id=request.lesson_id)
 
         # 1. Fetch Lesson Data from DB
@@ -62,6 +62,7 @@ class ExamService:
             "constructed_prompt": "",
             "generated_json": {},
             "generated_exam": None,
+            "gemini_api_key": gemini_api_key,
             "error": ""
         }
 

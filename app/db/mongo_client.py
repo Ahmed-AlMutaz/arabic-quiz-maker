@@ -51,10 +51,32 @@ class MongoManager:
                 logger.error("Error retrieving lesson from MongoDB", error=str(e))
         return self._in_memory_store["lessons"].get(lesson_id)
 
-    async def save_exam(self, exam_id: str, exam_data: Dict[str, Any]) -> bool:
+    async def increment_exams_counter(self) -> int:
         if self.use_mongo and self.db is not None:
             try:
+                # Increment the persistent counter document
+                result = await self.db.counters.find_one_and_update(
+                    {"_id": "exams_total"},
+                    {"$inc": {"count": 1}},
+                    upsert=True,
+                    return_document=True
+                )
+                return result.get("count", 1)
+            except Exception as e:
+                logger.error("Error incrementing exams counter", error=str(e))
+        return 1
+
+    async def save_exam(self, exam_id: str, exam_data: Dict[str, Any]) -> bool:
+        import datetime
+        exam_data["created_at"] = datetime.datetime.utcnow()
+        if self.use_mongo and self.db is not None:
+            try:
+                # 1. Create a TTL index so exams automatically expire and delete after 30 minutes (1800s)
+                await self.db.exams.create_index("created_at", expireAfterSeconds=1800)
+                # 2. Save the exam
                 await self.db.exams.update_one({"exam_id": exam_id}, {"$set": exam_data}, upsert=True)
+                # 3. Increment the persistent global counter
+                await self.increment_exams_counter()
                 return True
             except Exception as e:
                 logger.error("Error saving exam to MongoDB", error=str(e))
@@ -67,9 +89,21 @@ class MongoManager:
                 doc = await self.db.exams.find_one({"exam_id": exam_id})
                 if doc:
                     doc.pop("_id", None)
+                    doc.pop("created_at", None)
                     return doc
             except Exception as e:
                 logger.error("Error getting exam from MongoDB", error=str(e))
         return self._in_memory_store["exams"].get(exam_id)
+
+    async def get_exams_count(self) -> int:
+        if self.use_mongo and self.db is not None:
+            try:
+                doc = await self.db.counters.find_one({"_id": "exams_total"})
+                if doc:
+                    return doc.get("count", 0)
+                return await self.db.exams.count_documents({})
+            except Exception as e:
+                logger.error("Error counting exams in MongoDB", error=str(e))
+        return len(self._in_memory_store["exams"])
 
 mongo_manager = MongoManager()

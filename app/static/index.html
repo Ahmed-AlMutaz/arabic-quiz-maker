@@ -650,6 +650,140 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* Mobile Responsiveness & Adaptive Layouts */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 16px;
+                padding: 16px 20px;
+                text-align: center;
+                border-radius: var(--radius-md);
+            }
+
+            .brand {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .brand-text h1 {
+                font-size: 1.3rem;
+            }
+
+            .brand-text p {
+                font-size: 0.8rem;
+            }
+
+            header > div:last-child {
+                flex-direction: column;
+                width: 100%;
+                gap: 10px;
+            }
+
+            .exams-counter, .system-status {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .stepper {
+                flex-direction: column;
+                gap: 16px;
+                background: var(--bg-card);
+                border: 1px solid var(--border-color);
+                border-radius: var(--radius-md);
+                padding: 16px;
+            }
+
+            .stepper::before {
+                display: none; /* Hide connector line on mobile */
+            }
+
+            .step-item {
+                flex-direction: row;
+                gap: 12px;
+                width: 100%;
+                justify-content: flex-start;
+                padding: 8px 12px;
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.02);
+            }
+
+            .step-item.active {
+                background: rgba(56, 189, 248, 0.05);
+            }
+
+            .step-number {
+                width: 36px;
+                height: 36px;
+                font-size: 0.95rem;
+            }
+
+            .step-label {
+                font-size: 0.9rem;
+            }
+
+            .card {
+                padding: 20px 16px;
+                border-radius: var(--radius-md);
+            }
+
+            .card-title {
+                font-size: 1.1rem;
+            }
+
+            .drop-zone {
+                padding: 30px 16px;
+            }
+
+            /* Step 3: Result Page layouts */
+            .metrics-bar {
+                flex-direction: column;
+                gap: 16px;
+                padding: 16px;
+            }
+
+            .metric-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                padding-bottom: 8px;
+            }
+
+            .metric-item:last-child {
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+
+            .q-options {
+                grid-template-columns: 1fr; /* Stack MCQ choices vertically on mobile */
+                padding-right: 0;
+            }
+
+            .paper-view {
+                padding: 24px 16px;
+            }
+
+            .paper-header h2 {
+                font-size: 1.2rem;
+            }
+
+            .paper-meta {
+                flex-direction: column;
+                gap: 6px;
+                align-items: center;
+            }
+
+            /* Action Buttons scaling */
+            .btn-action {
+                font-size: 0.95rem;
+                padding: 14px 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -668,13 +802,14 @@
             </div>
 
             <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                <div class="api-key-box" style="display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 30px; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);">
-                    <i class="fa-solid fa-key" style="color: var(--accent-yellow); font-size: 1rem;"></i>
-                    <input type="password" id="custom-api-key" placeholder="أدخل مفتاح Gemini API للتغيير..." style="background: transparent; border: none; color: white; outline: none; font-size: 0.85rem; width: 220px; font-weight: 600;" onchange="saveApiKey(this.value)">
+                <div class="exams-counter" style="display: flex; align-items: center; gap: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid var(--primary); padding: 8px 16px; border-radius: 30px; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);">
+                    <i class="fa-solid fa-graduation-cap" style="color: var(--accent-yellow); font-size: 1rem;"></i>
+                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 600;">الاختبارات المنشأة:</span>
+                    <span id="created-exams-count" style="font-size: 1rem; color: white; font-weight: 800;">...</span>
                 </div>
                 <div class="system-status">
                     <div class="status-dot"></div>
-                    <span>المحرك الذكي جاهز (RAG + Gemini)</span>
+                    <span>المحرك الذكي جاهز</span>
                 </div>
             </div>
         </header>
@@ -737,7 +872,7 @@
 
             <button class="btn-action" id="btn-process-ocr" onclick="processOCR()">
                 <i class="fa-solid fa-bolt"></i>
-                <span id="btn-ocr-text">بدء استخراج النص وفهرسة الدرس في محرك RAG</span>
+                <span id="btn-ocr-text">بدء استخراج النص وفهرسة الدرس</span>
             </button>
         </div>
 
@@ -864,32 +999,26 @@
         let currentLessonId = null;
         let currentExamData = null;
 
-        // Load saved Gemini API Key on page initialization
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedKey = localStorage.getItem('gemini_custom_api_key');
-            if (savedKey) {
-                document.getElementById('custom-api-key').value = savedKey;
-            }
-        });
-
-        function saveApiKey(val) {
-            const key = val.trim();
-            if (key) {
-                localStorage.setItem('gemini_custom_api_key', key);
-                showToast('تم حفظ مفتاح Gemini API الخاص بك بنجاح!');
-            } else {
-                localStorage.removeItem('gemini_custom_api_key');
-            }
-        }
-
         function getAuthHeaders() {
-            const headers = { 'Content-Type': 'application/json' };
-            const savedKey = localStorage.getItem('gemini_custom_api_key');
-            if (savedKey) {
-                headers['X-Gemini-API-Key'] = savedKey;
-            }
-            return headers;
+            return { 'Content-Type': 'application/json' };
         }
+
+        async function fetchExamsCount() {
+            try {
+                const response = await fetch('/api/v1/exam/count');
+                if (response.ok) {
+                    const data = await response.json();
+                    const el = document.getElementById('created-exams-count');
+                    if (el) el.innerText = data.count;
+                }
+            } catch (err) {
+                console.error("Error fetching exams count", err);
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchExamsCount();
+        });
 
         function switchStep(step) {
             currentStep = step;
@@ -978,16 +1107,12 @@
             try {
                 let response;
                 const headers = {};
-                const customKey = localStorage.getItem('gemini_custom_api_key');
-                if (customKey) {
-                    headers['X-Gemini-API-Key'] = customKey;
-                }
 
                 if (activeUploadTab === 'ocr-file') {
                     if (selectedFiles.length === 0) {
                         showToast('الرجاء اختيار صورة أو ملف PDF واحد على الأقل!', true);
                         btn.disabled = false;
-                        btnText.innerText = 'بدء استخراج النص وفهرسة الدرس في محرك RAG';
+                        btnText.innerText = 'بدء استخراج النص وفهرسة الدرس';
                         return;
                     }
 
@@ -1005,7 +1130,7 @@
                     if (!rawText) {
                         showToast('الرجاء إدخال نص الدرس العربي!', true);
                         btn.disabled = false;
-                        btnText.innerText = 'بدء استخراج النص وفهرسة الدرس في محرك RAG';
+                        btnText.innerText = 'بدء استخراج النص وفهرسة الدرس';
                         return;
                     }
 
@@ -1031,7 +1156,7 @@
                 showToast(err.message || 'حدث خطأ أثناء معالجة المستندات', true);
             } finally {
                 btn.disabled = false;
-                btnText.innerText = 'بدء استخراج النص وفهرسة الدرس في محرك RAG';
+                btnText.innerText = 'بدء استخراج النص وفهرسة الدرس';
             }
         }
 
@@ -1045,7 +1170,7 @@
             }
 
             btn.disabled = true;
-            btnText.innerHTML = '<span class="spinner"></span> جاري صياغة الامتحان القياسي (20 سؤالاً) عبر RAG & Gemini...';
+            btnText.innerHTML = '<span class="spinner"></span> جاري صياغة الامتحان القياسي (20 سؤالاً) بالذكاء الاصطناعي...';
 
             try {
                 response = await fetch('/api/v1/exam/generate', {
@@ -1071,6 +1196,7 @@
 
                 const data = await response.json();
                 currentExamData = data;
+                fetchExamsCount();
 
                 // Set download links
                 document.getElementById('link-download-student').href = `/api/v1/download/student/${data.exam_id}`;
